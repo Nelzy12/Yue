@@ -99,7 +99,9 @@ const listThreads = async () => {
 
       return threadList;
     } else {
-      console.log(chalk.yellow("[ DATABASE ] : No threads found in the database."));
+      console.log(
+        chalk.yellow("[ DATABASE ] : No threads found in the database."),
+      );
       return null;
     }
   } catch (error) {
