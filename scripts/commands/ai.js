@@ -1,50 +1,41 @@
-const axios = require("axios");
+const axios = require('axios');
 
 module.exports = {
   config: {
     name: "ai",
-    description: "Generate AI-based responses using GPT.",
-    usage: ":ai <query>",
-    author: "Rui",
-  },
-  run: async ({ api, event, args }) => {
-    const input = args.join(" ");
-
-    if (!input) {
-      api.sendMessage(
-        "No query detected. Correct usage is `:ai <query>`.",
-        event.threadID,
-        event.messageID,
-      );
+    version: "1.0.0",
+    hasPermission: true,
+    description: "Herc.ai LLM Model",
+    usePrefix: false,
+    credits: "Rui",
+    cooldowns: 5
+  }, 
+  async run({
+    api, event, args
+  }) {
+    const query = args.join(" ");
+    
+    if (!query) {
+      api.sendMessage('❌ | No query detected! Usage: herc <query>', event.threadID, event.messageID);
       return;
     }
-
+    
     try {
-      const response = await axios.post(
-        "https://api.openai.com/v1/engines/davinci-codex/completions",
-        {
-          prompt: input,
-          max_tokens: 100,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer YOUR_API_KEY",
-          },
-        },
-      );
+      const userData = await api.getUserInfo(event.senderID);
+      const userName = userData[event.senderID].name;
+      
+      api.setMessageReaction("⏳", event.messageID);
 
-      const aiResponse =
-        response.data.choices[0]?.text.trim() || "No response from AI.";
-
-      api.sendMessage(aiResponse, event.threadID, event.messageID);
+      const response = await axios.get(`https://hercai.onrender.com/v3/hercai?question=${encodeURIComponent(query)}`);
+      
+      if (response.data) {
+        const reply = response.data.reply;
+        api.sendMessage(`🔥 | Herc.ai\n━━━━━━━━━━━━━━━\n${reply}\n\n🗣️ | Question asked by ${userName}`, event.threadID, event.messageID);
+        api.setMessageReaction("✅", event.messageID);
+      }
     } catch (error) {
-      console.error("Error generating AI response:", error.message);
-      api.sendMessage(
-        "An error occurred while generating AI response.",
-        event.threadID,
-        event.messageID,
-      );
+      console.error("Error:", error);
+      api.sendMessage("❌ | An error occurred while processing your request.", event.threadID, event.messageID);
     }
-  },
+  }
 };
